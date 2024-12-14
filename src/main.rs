@@ -2,27 +2,30 @@ use rand::{self, random};
 use raylib::prelude::*;
 
 fn main() {
-    let (mut rl, thread) = raylib::init()
-        .size(640, 480)
-        .title("Snake")
-        .msaa_4x()
-        .build();
-
+    let (mut rl, thread) = raylib::init().size(640, 480).title("Snake").build();
     rl.set_target_fps(60);
 
-    let mut world = World {
+    let default_world = World {
         width: 32,
         height: 24,
         scale: 20,
         tick_delay: 5,
         food: Position { x: 5, y: 16 },
     };
-    let mut snake = Snake::new(Position { x: 5, y: 5 }, 5, Direction::Right);
+    let default_snake = Snake::new(Position { x: 5, y: 5 }, 5, Direction::Right);
+
+    let mut world = default_world.clone();
+    let mut snake = default_snake.clone();
 
     while !rl.window_should_close() {
         let mut d = rl.begin_drawing(&thread);
 
         d.clear_background(Color::BLACK);
+
+        if d.is_key_pressed(KeyboardKey::KEY_R) {
+            world = default_world.clone();
+            snake = default_snake.clone();
+        }
 
         snake.update(&mut d, &mut world);
         snake.draw(&mut d, &world);
@@ -43,6 +46,7 @@ struct Position {
     y: i32,
 }
 
+#[derive(Clone)]
 struct World {
     width: u32,
     height: u32,
@@ -51,6 +55,7 @@ struct World {
     food: Position,
 }
 
+#[derive(Clone)]
 struct Snake {
     body: Vec<Position>,
     alive: bool,
@@ -96,17 +101,12 @@ impl Snake {
             } else {
                 if val.clone() == world.food {
                     self.body.push(self.body[self.body.len() - 1]);
-                    world.food = Position {
-                        x: (random::<i32>() % world.width as i32).abs(),
-                        y: (random::<i32>() % world.height as i32).abs(),
-                    };
-
                     while self.body.contains(&world.food) {
                         world.food = Position {
                             x: (random::<i32>() % world.width as i32).abs(),
                             y: (random::<i32>() % world.height as i32).abs(),
                         };
-                    };
+                    }
                 }
             }
         });
@@ -129,8 +129,11 @@ impl Snake {
         self.ticker += 1;
 
         if self.ticker % world.tick_delay == 0 && self.alive {
-            let new_body: Vec<Position> = {
-                self.body.iter().enumerate().map(|(i, val)| {
+            let new_body: Vec<Position> = self
+                .body
+                .iter()
+                .enumerate()
+                .map(|(i, val)| {
                     if i == 0 {
                         match self.direction {
                             Direction::Up => Position {
@@ -154,8 +157,7 @@ impl Snake {
                         self.body[i - 1]
                     }
                 })
-            }
-            .collect();
+                .collect();
             self.body = new_body;
         }
     }
@@ -178,6 +180,9 @@ impl Snake {
             world.scale as i32,
             Color::ORANGE,
         );
+
+        let b = format!("{}", self.body.len());
+        handle.draw_text(&b, 0, 0, 20, Color::GREEN);
     }
 }
 
