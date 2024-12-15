@@ -108,11 +108,11 @@ impl Snake {
     fn update(self: &mut Self, handle: &RaylibDrawHandle, world: &mut World) {
         self.body.clone().iter().enumerate().for_each(|(i, val)| {
             if i != 0 {
-                if val.clone() == self.body[0] {
+                if *val == self.body[0] {
                     self.alive = false;
                 }
             } else {
-                if val.clone() == world.food {
+                if *val == world.food {
                     let new_body: Vec<Position> = (0..self.body.len() + 3)
                         .into_iter()
                         .map(|x| {
