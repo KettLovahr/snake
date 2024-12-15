@@ -61,6 +61,7 @@ struct Snake {
     alive: bool,
     direction: Direction,
     ticker: u32,
+    score: u32,
 }
 
 impl Snake {
@@ -89,6 +90,7 @@ impl Snake {
             alive: true,
             direction: dir,
             ticker: 0,
+            score: 0
         }
     }
 
@@ -100,7 +102,15 @@ impl Snake {
                 }
             } else {
                 if val.clone() == world.food {
-                    self.body.push(self.body[self.body.len() - 1]);
+                    let new_body: Vec<Position> = (0..self.body.len()+3).into_iter().map(|x| {
+                        if x < self.body.len() {
+                            self.body[x]
+                        } else {
+                            self.body[self.body.len() - 1]
+                        }
+                    }).collect();
+                    self.body = new_body;
+                    self.score += 1;
                     while self.body.contains(&world.food) {
                         world.food = Position {
                             x: (random::<i32>() % world.width as i32).abs(),
@@ -181,7 +191,7 @@ impl Snake {
             Color::ORANGE,
         );
 
-        let b = format!("{}", self.body.len());
+        let b = format!("{}", self.score);
         handle.draw_text(&b, 0, 0, 20, Color::GREEN);
     }
 }
