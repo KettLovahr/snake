@@ -1,4 +1,4 @@
-use rand::{self, random};
+use rand::random;
 use raylib::prelude::*;
 
 fn main() {
@@ -38,6 +38,17 @@ enum Direction {
     Right,
     Down,
     Left,
+}
+
+impl Direction {
+    fn opposite(&self) -> Self {
+        match self {
+            Self::Up => Self::Down,
+            Self::Right => Self::Left,
+            Self::Down => Self::Up,
+            Self::Left => Self::Right,
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -90,11 +101,11 @@ impl Snake {
             alive: true,
             direction: dir,
             ticker: 0,
-            score: 0
+            score: 0,
         }
     }
 
-    fn update(self: &mut Self, handle: &mut RaylibDrawHandle, world: &mut World) {
+    fn update(self: &mut Self, handle: &RaylibDrawHandle, world: &mut World) {
         self.body.clone().iter().enumerate().for_each(|(i, val)| {
             if i != 0 {
                 if val.clone() == self.body[0] {
@@ -102,13 +113,16 @@ impl Snake {
                 }
             } else {
                 if val.clone() == world.food {
-                    let new_body: Vec<Position> = (0..self.body.len()+3).into_iter().map(|x| {
-                        if x < self.body.len() {
-                            self.body[x]
-                        } else {
-                            self.body[self.body.len() - 1]
-                        }
-                    }).collect();
+                    let new_body: Vec<Position> = (0..self.body.len() + 3)
+                        .into_iter()
+                        .map(|x| {
+                            if x < self.body.len() {
+                                self.body[x]
+                            } else {
+                                self.body[self.body.len() - 1]
+                            }
+                        })
+                        .collect();
                     self.body = new_body;
                     self.score += 1;
                     while self.body.contains(&world.food) {
@@ -120,25 +134,12 @@ impl Snake {
                 }
             }
         });
-        let mut dir_queue: Direction = self.direction;
 
-        if handle.is_key_down(KeyboardKey::KEY_UP) && self.direction != Direction::Down {
-            dir_queue = Direction::Up;
-        }
-        if handle.is_key_down(KeyboardKey::KEY_DOWN) && self.direction != Direction::Up {
-            dir_queue = Direction::Down;
-        }
-        if handle.is_key_down(KeyboardKey::KEY_LEFT) && self.direction != Direction::Right {
-            dir_queue = Direction::Left;
-        }
-        if handle.is_key_down(KeyboardKey::KEY_RIGHT) && self.direction != Direction::Left {
-            dir_queue = Direction::Right;
-        }
-
-        self.direction = dir_queue;
         self.ticker += 1;
 
         if self.ticker % world.tick_delay == 0 && self.alive {
+            self.handle_input(handle);
+
             let new_body: Vec<Position> = self
                 .body
                 .iter()
@@ -172,6 +173,26 @@ impl Snake {
         }
     }
 
+    fn handle_input(&mut self, handle: &RaylibDrawHandle) {
+        let mut dir_queue = self.direction;
+        if handle.is_key_down(KeyboardKey::KEY_UP) {
+            dir_queue = Direction::Up;
+        }
+        if handle.is_key_down(KeyboardKey::KEY_DOWN) {
+            dir_queue = Direction::Down;
+        }
+        if handle.is_key_down(KeyboardKey::KEY_LEFT) {
+            dir_queue = Direction::Left;
+        }
+        if handle.is_key_down(KeyboardKey::KEY_RIGHT) {
+            dir_queue = Direction::Right;
+        }
+
+        if dir_queue != self.direction.opposite() {
+            self.direction = dir_queue;
+        }
+    }
+
     fn draw(&self, handle: &mut RaylibDrawHandle, world: &World) {
         self.body.iter().for_each(|pos| {
             handle.draw_rectangle(
@@ -191,7 +212,7 @@ impl Snake {
             Color::ORANGE,
         );
 
-        let b = format!("{}", self.score);
+        let b = format!("Score: {:0>3}", self.score);
         handle.draw_text(&b, 0, 0, 20, Color::GREEN);
     }
 }
