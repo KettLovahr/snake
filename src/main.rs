@@ -66,7 +66,10 @@ impl std::ops::Sub for Position {
     type Output = Position;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Position{x: self.x - rhs.x, y: self.y - rhs.y}
+        Position {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+        }
     }
 }
 
@@ -119,35 +122,6 @@ impl Snake {
     }
 
     fn update(self: &mut Self, handle: &RaylibDrawHandle, world: &mut World) {
-        self.body.clone().iter().enumerate().for_each(|(i, val)| {
-            if i != 0 {
-                if *val == self.body[0] {
-                    self.alive = false;
-                }
-            } else {
-                if *val == world.food {
-                    let new_body: Vec<Position> = (0..self.body.len() + 3)
-                        .into_iter()
-                        .map(|x| {
-                            if x < self.body.len() {
-                                self.body[x]
-                            } else {
-                                self.body[self.body.len() - 1]
-                            }
-                        })
-                        .collect();
-                    self.body = new_body;
-                    self.score += 1;
-                    while self.body.contains(&world.food) {
-                        world.food = Position {
-                            x: (random::<i32>() % world.width as i32).abs(),
-                            y: (random::<i32>() % world.height as i32).abs(),
-                        };
-                    }
-                }
-            }
-        });
-
         self.ticker += 1;
 
         if self.ticker % world.tick_delay == 0 && self.alive {
@@ -178,11 +152,38 @@ impl Snake {
                             },
                         }
                     } else {
+                        if *val == self.body[0] {
+                            self.alive = false;
+                        }
                         self.body[i - 1]
                     }
                 })
                 .collect();
-            self.body = new_body;
+
+            if self.alive {
+                self.body = new_body;
+            }
+
+            if self.body[0] == world.food {
+                let new_body: Vec<Position> = (0..self.body.len() + 3)
+                    .into_iter()
+                    .map(|x| {
+                        if x < self.body.len() {
+                            self.body[x]
+                        } else {
+                            self.body[self.body.len() - 1]
+                        }
+                    })
+                    .collect();
+                self.body = new_body;
+                self.score += 1;
+                while self.body.contains(&world.food) {
+                    world.food = Position {
+                        x: (random::<i32>() % world.width as i32).abs(),
+                        y: (random::<i32>() % world.height as i32).abs(),
+                    };
+                }
+            }
         }
     }
 
@@ -208,34 +209,38 @@ impl Snake {
 
     fn draw(&self, handle: &mut RaylibDrawHandle, world: &World) {
         self.body.iter().enumerate().for_each(|(x, pos)| {
-            if x == 0 || x == self.body.len() - 1 {
+            if (x == 0 || x == self.body.len() - 1) && self.alive {
                 let len = self.body.len() - 1;
-                let ev = if x==0 {*pos - self.body[1]} else {*pos - self.body[len-1]};
-                let op = if x==0 {
+                let ev = if x == 0 {
+                    *pos - self.body[1]
+                } else {
+                    *pos - self.body[len - 1]
+                };
+                let op = if x == 0 {
                     ((self.ticker % world.tick_delay) as f32 / world.tick_delay as f32)
                 } else {
                     1.0 - ((self.ticker % world.tick_delay) as f32 / world.tick_delay as f32)
                 };
                 match ev {
-                    Position{x: -1, y: 0} => {
+                    Position { x: -1, y: 0 } => {
                         handle.draw_rectangle(
-                            ((pos.x+1) * world.scale as i32) - (op * world.scale as f32) as i32,
+                            ((pos.x + 1) * world.scale as i32) - (op * world.scale as f32) as i32,
                             pos.y * world.scale as i32,
                             world.scale as i32,
                             world.scale as i32,
                             if self.alive { Color::WHITE } else { Color::RED },
                         );
                     }
-                    Position{x: 0, y: -1} => {
+                    Position { x: 0, y: -1 } => {
                         handle.draw_rectangle(
                             pos.x * world.scale as i32,
-                            ((pos.y+1) * world.scale as i32) - (op * world.scale as f32) as i32,
+                            ((pos.y + 1) * world.scale as i32) - (op * world.scale as f32) as i32,
                             world.scale as i32,
                             world.scale as i32,
                             if self.alive { Color::WHITE } else { Color::RED },
                         );
                     }
-                    Position{x: 0, y: 1} => {
+                    Position { x: 0, y: 1 } => {
                         handle.draw_rectangle(
                             pos.x * world.scale as i32,
                             pos.y * world.scale as i32,
@@ -244,7 +249,7 @@ impl Snake {
                             if self.alive { Color::WHITE } else { Color::RED },
                         );
                     }
-                    Position{x: 1, y: 0} => {
+                    Position { x: 1, y: 0 } => {
                         handle.draw_rectangle(
                             pos.x * world.scale as i32,
                             pos.y * world.scale as i32,
@@ -253,9 +258,7 @@ impl Snake {
                             if self.alive { Color::WHITE } else { Color::RED },
                         );
                     }
-                    _ => {
-
-                    }
+                    _ => {}
                 }
             } else {
                 handle.draw_rectangle(
