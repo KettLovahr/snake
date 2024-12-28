@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use rand::random;
 use raylib::prelude::*;
 
@@ -19,6 +21,7 @@ fn main() {
 
     while !rl.window_should_close() {
         let mut d = rl.begin_drawing(&thread);
+        let instant: Instant = Instant::now();
 
         d.clear_background(Color::BLACK);
 
@@ -29,6 +32,8 @@ fn main() {
 
         snake.update(&mut d, &mut world);
         snake.draw(&mut d, &world);
+        let str_inst: String = format!("{}", instant.elapsed().as_nanos() / 1000);
+        d.draw_text(&str_inst, 0, 20, 20, Color::WHITE);
     }
 }
 
@@ -55,6 +60,14 @@ impl Direction {
 struct Position {
     x: i32,
     y: i32,
+}
+
+impl std::ops::Sub for Position {
+    type Output = Position;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Position{x: self.x - rhs.x, y: self.y - rhs.y}
+    }
 }
 
 #[derive(Clone)]
@@ -194,14 +207,65 @@ impl Snake {
     }
 
     fn draw(&self, handle: &mut RaylibDrawHandle, world: &World) {
-        self.body.iter().for_each(|pos| {
-            handle.draw_rectangle(
-                pos.x * world.scale as i32,
-                pos.y * world.scale as i32,
-                world.scale as i32,
-                world.scale as i32,
-                if self.alive { Color::WHITE } else { Color::RED },
-            );
+        self.body.iter().enumerate().for_each(|(x, pos)| {
+            if x == 0 || x == self.body.len() - 1 {
+                let len = self.body.len() - 1;
+                let ev = if x==0 {*pos - self.body[1]} else {*pos - self.body[len-1]};
+                let op = if x==0 {
+                    ((self.ticker % world.tick_delay) as f32 / world.tick_delay as f32)
+                } else {
+                    1.0 - ((self.ticker % world.tick_delay) as f32 / world.tick_delay as f32)
+                };
+                match ev {
+                    Position{x: -1, y: 0} => {
+                        handle.draw_rectangle(
+                            ((pos.x+1) * world.scale as i32) - (op * world.scale as f32) as i32,
+                            pos.y * world.scale as i32,
+                            world.scale as i32,
+                            world.scale as i32,
+                            if self.alive { Color::WHITE } else { Color::RED },
+                        );
+                    }
+                    Position{x: 0, y: -1} => {
+                        handle.draw_rectangle(
+                            pos.x * world.scale as i32,
+                            ((pos.y+1) * world.scale as i32) - (op * world.scale as f32) as i32,
+                            world.scale as i32,
+                            world.scale as i32,
+                            if self.alive { Color::WHITE } else { Color::RED },
+                        );
+                    }
+                    Position{x: 0, y: 1} => {
+                        handle.draw_rectangle(
+                            pos.x * world.scale as i32,
+                            pos.y * world.scale as i32,
+                            world.scale as i32,
+                            (world.scale as f32 * op) as i32,
+                            if self.alive { Color::WHITE } else { Color::RED },
+                        );
+                    }
+                    Position{x: 1, y: 0} => {
+                        handle.draw_rectangle(
+                            pos.x * world.scale as i32,
+                            pos.y * world.scale as i32,
+                            (world.scale as f32 * op) as i32,
+                            world.scale as i32,
+                            if self.alive { Color::WHITE } else { Color::RED },
+                        );
+                    }
+                    _ => {
+
+                    }
+                }
+            } else {
+                handle.draw_rectangle(
+                    pos.x * world.scale as i32,
+                    pos.y * world.scale as i32,
+                    world.scale as i32,
+                    world.scale as i32,
+                    if self.alive { Color::WHITE } else { Color::RED },
+                );
+            }
         });
 
         handle.draw_rectangle(
@@ -217,6 +281,6 @@ impl Snake {
     }
 }
 
-fn emod(l: i32, r: i32) -> i32 {
+const fn emod(l: i32, r: i32) -> i32 {
     ((l % r) + r) % r
 }
