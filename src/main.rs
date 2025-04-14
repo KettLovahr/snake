@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use rand::random;
 use raylib::prelude::*;
 
@@ -21,7 +19,6 @@ fn main() {
 
     while !rl.window_should_close() {
         let mut d = rl.begin_drawing(&thread);
-        let instant: Instant = Instant::now();
 
         d.clear_background(Color::BLACK);
 
@@ -32,8 +29,6 @@ fn main() {
 
         snake.update(&mut d, &mut world);
         snake.draw(&mut d, &world);
-        let str_inst: String = format!("{}", instant.elapsed().as_nanos() / 1000);
-        d.draw_text(&str_inst, 0, 20, 20, Color::WHITE);
     }
 }
 
