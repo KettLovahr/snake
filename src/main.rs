@@ -75,9 +75,9 @@ impl std::ops::Sub for Position {
 
 #[derive(Clone)]
 struct World {
-    width: u32,
-    height: u32,
-    scale: u32,
+    width: i32,
+    height: i32,
+    scale: i32,
     tick_delay: u32,
     food: Position,
 }
@@ -92,24 +92,24 @@ struct Snake {
 }
 
 impl Snake {
-    fn new(pos: Position, length: u32, dir: Direction) -> Self {
+    fn new(pos: Position, length: i32, dir: Direction) -> Self {
         Snake {
             body: (0..length)
                 .map(|n| match dir {
                     Direction::Up => Position {
                         x: pos.x,
-                        y: pos.y + n as i32,
+                        y: pos.y + n
                     },
                     Direction::Right => Position {
-                        x: pos.x - n as i32,
+                        x: pos.x - n,
                         y: pos.y,
                     },
                     Direction::Down => Position {
                         x: pos.x,
-                        y: pos.y - n as i32,
+                        y: pos.y - n,
                     },
                     Direction::Left => Position {
-                        x: pos.x + n as i32,
+                        x: pos.x + n,
                         y: pos.y,
                     },
                 })
@@ -136,18 +136,18 @@ impl Snake {
                         match self.direction {
                             Direction::Up => Position {
                                 x: val.x,
-                                y: emod(val.y - 1, world.height as i32),
+                                y: emod(val.y - 1, world.height),
                             },
                             Direction::Right => Position {
-                                x: emod(val.x + 1, world.width as i32),
+                                x: emod(val.x + 1, world.width),
                                 y: val.y,
                             },
                             Direction::Down => Position {
                                 x: val.x,
-                                y: emod(val.y + 1, world.height as i32),
+                                y: emod(val.y + 1, world.height),
                             },
                             Direction::Left => Position {
-                                x: emod(val.x - 1, world.width as i32),
+                                x: emod(val.x - 1, world.width),
                                 y: val.y,
                             },
                         }
@@ -179,8 +179,8 @@ impl Snake {
                 self.score += 1;
                 while self.body.contains(&world.food) {
                     world.food = Position {
-                        x: (random::<i32>() % world.width as i32).abs(),
-                        y: (random::<i32>() % world.height as i32).abs(),
+                        x: (random::<i32>() % world.width).abs(),
+                        y: (random::<i32>() % world.height).abs(),
                     };
                 }
             }
@@ -217,44 +217,44 @@ impl Snake {
                     *pos - self.body[len - 1]
                 };
                 let op = if x == 0 {
-                    ((self.ticker % world.tick_delay) as f32 / world.tick_delay as f32)
+                    (self.ticker % world.tick_delay) as f32 / world.tick_delay as f32
                 } else {
                     1.0 - ((self.ticker % world.tick_delay) as f32 / world.tick_delay as f32)
                 };
                 match ev {
                     Position { x: -1, y: 0 } => {
                         handle.draw_rectangle(
-                            ((pos.x + 1) * world.scale as i32) - (op * world.scale as f32) as i32,
-                            pos.y * world.scale as i32,
-                            world.scale as i32,
-                            world.scale as i32,
+                            ((pos.x + 1) * world.scale) - (op * world.scale as f32) as i32,
+                            pos.y * world.scale,
+                            world.scale,
+                            world.scale,
                             if self.alive { Color::WHITE } else { Color::RED },
                         );
                     }
                     Position { x: 0, y: -1 } => {
                         handle.draw_rectangle(
-                            pos.x * world.scale as i32,
-                            ((pos.y + 1) * world.scale as i32) - (op * world.scale as f32) as i32,
-                            world.scale as i32,
-                            world.scale as i32,
+                            pos.x * world.scale,
+                            ((pos.y + 1) * world.scale) - (op * world.scale as f32) as i32,
+                            world.scale,
+                            world.scale,
                             if self.alive { Color::WHITE } else { Color::RED },
                         );
                     }
                     Position { x: 0, y: 1 } => {
                         handle.draw_rectangle(
-                            pos.x * world.scale as i32,
-                            pos.y * world.scale as i32,
-                            world.scale as i32,
+                            pos.x * world.scale,
+                            pos.y * world.scale,
+                            world.scale,
                             (world.scale as f32 * op) as i32,
                             if self.alive { Color::WHITE } else { Color::RED },
                         );
                     }
                     Position { x: 1, y: 0 } => {
                         handle.draw_rectangle(
-                            pos.x * world.scale as i32,
-                            pos.y * world.scale as i32,
+                            pos.x * world.scale,
+                            pos.y * world.scale,
                             (world.scale as f32 * op) as i32,
-                            world.scale as i32,
+                            world.scale,
                             if self.alive { Color::WHITE } else { Color::RED },
                         );
                     }
@@ -262,20 +262,20 @@ impl Snake {
                 }
             } else {
                 handle.draw_rectangle(
-                    pos.x * world.scale as i32,
-                    pos.y * world.scale as i32,
-                    world.scale as i32,
-                    world.scale as i32,
+                    pos.x * world.scale,
+                    pos.y * world.scale,
+                    world.scale,
+                    world.scale,
                     if self.alive { Color::WHITE } else { Color::RED },
                 );
             }
         });
 
         handle.draw_rectangle(
-            world.food.x * world.scale as i32,
-            world.food.y * world.scale as i32,
-            world.scale as i32,
-            world.scale as i32,
+            world.food.x * world.scale,
+            world.food.y * world.scale,
+            world.scale,
+            world.scale,
             Color::ORANGE,
         );
 
